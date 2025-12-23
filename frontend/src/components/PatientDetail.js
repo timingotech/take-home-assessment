@@ -14,9 +14,10 @@ const PatientDetail = ({ patientId, onBack }) => {
     const fetchPatientData = async () => {
       setLoading(true);
       try {
-        // TODO: Fetch patient data using apiService.getPatient(patientId)
-        // TODO: Fetch patient records using apiService.getPatientRecords(patientId)
-        // TODO: Update state with fetched data
+        const patientResp = await apiService.getPatient(patientId);
+        const recordsResp = await apiService.getPatientRecords(patientId);
+        setPatient(patientResp || null);
+        setRecords(recordsResp.records || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -58,8 +59,14 @@ const PatientDetail = ({ patientId, onBack }) => {
         <div className="patient-info-section">
           <h2>Patient Information</h2>
           {/* Your implementation here */}
-          <div className="placeholder">
-            <p>Display patient information here</p>
+          <div className="patient-info">
+            <div><strong>Name:</strong> {patient.name}</div>
+            <div><strong>Email:</strong> {patient.email}</div>
+            <div><strong>Date of Birth:</strong> {new Date(patient.dateOfBirth).toLocaleDateString()}</div>
+            <div><strong>Gender:</strong> {patient.gender}</div>
+            <div><strong>Phone:</strong> {patient.phone || '—'}</div>
+            <div><strong>Address:</strong> {patient.address || '—'}</div>
+            <div><strong>Wallet:</strong> {patient.walletAddress || '—'}</div>
           </div>
         </div>
 
@@ -68,9 +75,27 @@ const PatientDetail = ({ patientId, onBack }) => {
         <div className="patient-records-section">
           <h2>Medical Records ({records.length})</h2>
           {/* Your implementation here */}
-          <div className="placeholder">
-            <p>Display medical records here</p>
-          </div>
+          {records.length === 0 ? (
+            <div className="empty">No records available</div>
+          ) : (
+            <div className="records-list">
+              {records.map((r) => (
+                <div key={r.id} className="record-card">
+                  <div className="record-header">
+                    <span className="record-type">{r.type}</span>
+                    <span className="record-title">{r.title}</span>
+                  </div>
+                  <div className="record-meta">
+                    <div><strong>Date:</strong> {new Date(r.date).toLocaleDateString()}</div>
+                    <div><strong>Doctor:</strong> {r.doctor}</div>
+                    <div><strong>Hospital:</strong> {r.hospital}</div>
+                    <div><strong>Status:</strong> {r.status}</div>
+                    <div className="record-hash"><strong>Hash:</strong> {r.blockchainHash || '—'}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

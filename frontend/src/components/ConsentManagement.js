@@ -20,8 +20,9 @@ const ConsentManagement = ({ account }) => {
     const fetchConsents = async () => {
       setLoading(true);
       try {
-        // TODO: Call apiService.getConsents with appropriate filters
-        // TODO: Update consents state
+        const statusFilter = filterStatus === 'all' ? null : filterStatus;
+        const resp = await apiService.getConsents(null, statusFilter);
+        setConsents(resp.consents || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -45,11 +46,20 @@ const ConsentManagement = ({ account }) => {
     }
 
     try {
-      // TODO: Implement consent creation with signature
-      // 1. Create a message to sign (e.g., "I consent to: {purpose} for patient: {patientId}")
-      // 2. Sign the message using signMessage
-      // 3. Call apiService.createConsent with patientId, purpose, account, and signature
-      // 4. Refresh consents and reset form
+      const message = `I consent to: ${formData.purpose} for patient: ${formData.patientId}`;
+      const signature = await signMessage(message);
+      await apiService.createConsent({
+        patientId: formData.patientId,
+        purpose: formData.purpose,
+        walletAddress: account,
+        signature,
+      });
+      // refresh
+      const statusFilter = filterStatus === 'all' ? null : filterStatus;
+      const resp = await apiService.getConsents(null, statusFilter);
+      setConsents(resp.consents || []);
+      setFormData({ patientId: '', purpose: '' });
+      setShowCreateForm(false);
     } catch (err) {
       alert('Failed to create consent: ' + err.message);
     }
@@ -59,8 +69,11 @@ const ConsentManagement = ({ account }) => {
   // This should update a consent's status (e.g., from pending to active)
   const handleUpdateStatus = async (consentId, newStatus) => {
     try {
-      // TODO: Call apiService.updateConsent to update the status
-      // TODO: Refresh consents list
+      const blockchainTxHash = newStatus === 'active' ? `0x${Date.now().toString(16)}` : null;
+      await apiService.updateConsent(consentId, { status: newStatus, blockchainTxHash });
+      const statusFilter = filterStatus === 'all' ? null : filterStatus;
+      const resp = await apiService.getConsents(null, statusFilter);
+      setConsents(resp.consents || []);
     } catch (err) {
       alert('Failed to update consent: ' + err.message);
     }
@@ -151,14 +164,26 @@ const ConsentManagement = ({ account }) => {
 
       {/* TODO: Display consents list */}
       <div className="consents-list">
-        {/* Your implementation here */}
-        {/* Map through consents and display them */}
-        {/* Show: patientId, purpose, status, createdAt, blockchainTxHash */}
-        {/* Add buttons to update status for pending consents */}
-        <div className="placeholder">
-          <p>Consent list will be displayed here</p>
-          <p>Implement the consent list rendering</p>
-        </div>
+        {consents.length === 0 ? (
+          <div className="empty">No consents found</div>
+        ) : (
+          consents.map((c) => (
+            <div key={c.id} className="consent-card">
+              <div className="consent-main">
+                <div><strong>Patient:</strong> {c.patientId}</div>
+                <div><strong>Purpose:</strong> {c.purpose}</div>
+                <div><strong>Status:</strong> {c.status}</div>
+                <div><strong>Created:</strong> {new Date(c.createdAt).toLocaleString()}</div>
+                <div><strong>Tx:</strong> {c.blockchainTxHash || '—'}</div>
+              </div>
+              <div className="consent-actions">
+                {c.status === 'pending' && (
+                  <button onClick={() => handleUpdateStatus(c.id, 'active')}>Activate</button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

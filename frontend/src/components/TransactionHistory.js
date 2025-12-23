@@ -12,8 +12,8 @@ const TransactionHistory = ({ account }) => {
     const fetchTransactions = async () => {
       setLoading(true);
       try {
-        // TODO: Call apiService.getTransactions with account address if available
-        // TODO: Update transactions state
+        const resp = await apiService.getTransactions(account || null, 20);
+        setTransactions(resp.transactions || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -30,8 +30,12 @@ const TransactionHistory = ({ account }) => {
   };
 
   const formatDate = (timestamp) => {
-    // TODO: Format the timestamp to a readable date
-    return timestamp;
+    if (!timestamp) return '';
+    try {
+      return new Date(timestamp).toLocaleString();
+    } catch (e) {
+      return timestamp;
+    }
   };
 
   if (loading) {
@@ -64,11 +68,23 @@ const TransactionHistory = ({ account }) => {
       {/* TODO: Display transactions list */}
       {/* Show: type, from, to, amount, currency, status, timestamp, blockchainTxHash */}
       <div className="transactions-list">
-        {/* Your implementation here */}
-        <div className="placeholder">
-          <p>Transaction list will be displayed here</p>
-          <p>Implement the transaction list rendering</p>
-        </div>
+        {transactions.length === 0 ? (
+          <div className="empty">No transactions found</div>
+        ) : (
+          transactions.map((t) => (
+            <div key={t.id} className="transaction-card">
+              <div className="tx-main">
+                <div className="tx-type">{t.type}</div>
+                <div className="tx-amount">{t.amount} {t.currency || 'ETH'}</div>
+                <div className="tx-from">From: {formatAddress(t.from)}</div>
+                <div className="tx-to">To: {formatAddress(t.to)}</div>
+                <div className="tx-status">Status: {t.status}</div>
+                <div className="tx-time">{formatDate(t.timestamp)}</div>
+                <div className="tx-hash">Hash: {t.blockchainTxHash || '—'}</div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

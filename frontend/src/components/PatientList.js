@@ -20,7 +20,10 @@ const PatientList = ({ onSelectPatient }) => {
     // Your implementation here
     setLoading(true);
     try {
-      // TODO: Call API and update state
+      const limit = 10;
+      const resp = await apiService.getPatients(currentPage, limit, searchTerm);
+      setPatients(resp.patients || []);
+      setPagination(resp.pagination || null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -35,7 +38,8 @@ const PatientList = ({ onSelectPatient }) => {
   // TODO: Implement search functionality
   // Add a debounce or handle search input changes
   const handleSearch = (e) => {
-    // Your implementation here
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
   };
 
   if (loading) {
@@ -64,6 +68,8 @@ const PatientList = ({ onSelectPatient }) => {
           placeholder="Search patients..."
           className="search-input"
           // TODO: Add value, onChange handlers
+          value={searchTerm}
+          onChange={handleSearch}
         />
       </div>
 
@@ -71,18 +77,48 @@ const PatientList = ({ onSelectPatient }) => {
       {/* Map through patients and display them */}
       {/* Each patient should be clickable and call onSelectPatient with patient.id */}
       <div className="patient-list">
-        {/* Your implementation here */}
-        <div className="placeholder">
-          <p>Patient list will be displayed here</p>
-          <p>Implement the patient list rendering</p>
-        </div>
+        {patients.length === 0 ? (
+          <div className="empty">No patients found</div>
+        ) : (
+          patients.map((p) => (
+            <div
+              key={p.id}
+              className="patient-card"
+              onClick={() => onSelectPatient && onSelectPatient(p.id)}
+            >
+              <h3 className="patient-name">{p.name}</h3>
+              <div className="patient-meta">
+                <div className="patient-email">{p.email}</div>
+                <div className="patient-dob">{new Date(p.dateOfBirth).toLocaleDateString()}</div>
+              </div>
+              <div className="patient-footer">
+                <div className="patient-phone">{p.phone}</div>
+                <div className="patient-wallet">{p.walletAddress || '—'}</div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* TODO: Implement pagination controls */}
       {/* Show pagination buttons if pagination data is available */}
       {pagination && (
         <div className="pagination">
-          {/* Your pagination implementation here */}
+          <button
+            onClick={() => setCurrentPage((s) => Math.max(1, s - 1))}
+            disabled={pagination.page <= 1}
+          >
+            Prev
+          </button>
+
+          <span className="page-info">Page {pagination.page} of {pagination.totalPages}</span>
+
+          <button
+            onClick={() => setCurrentPage((s) => Math.min(pagination.totalPages, s + 1))}
+            disabled={pagination.page >= pagination.totalPages}
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
