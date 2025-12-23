@@ -281,3 +281,4 @@ If you have any questions about the assessment, please reach out to the hiring t
 
 Good luck! 🚀
 
+"# take-home-assessment" 
